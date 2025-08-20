@@ -1,0 +1,75 @@
+/**
+ * State Definitions and Pydantic Schemas for Research Scoping.
+ *
+ * This defines the state objects and structured schemas used for
+ * the research agent scoping workflow, including researcher state management and output schemas.
+ */
+
+import { z } from "zod";
+import {
+  MessagesAnnotation,
+  Annotation,
+  addMessages,
+} from "@langchain/langgraph";
+import { BaseMessage } from "@langchain/core/messages";
+
+// ===== STATE DEFINITIONS =====
+
+// Input state for the full agent - only contains messages from user input.
+export const AgentInputState = MessagesAnnotation;
+
+// Main state for the full multi-agent research system.
+//
+// Extends MessagesState with additional fields for research coordination.
+// Note: Some fields are duplicated across different state classes for proper
+// state management between subgraphs and the main workflow.
+export const AgentState = Annotation.Root({
+  ...MessagesAnnotation.spec, // Spread in the messages state
+  // Research brief generated from user conversation history
+  research_brief: Annotation<string | undefined>({
+    reducer: (x: string | undefined, y: string | undefined) => y ?? x,
+  }),
+  // Messages exchanged with the supervisor agent for coordination
+  supervisor_messages: Annotation<BaseMessage[]>({
+    reducer: addMessages,
+    default: () => [],
+  }),
+  // Raw unprocessed research notes collected during the research phase
+  raw_notes: Annotation<string[]>({
+    reducer: (x: string[], y: string[]) => x.concat(y),
+    default: () => [],
+  }),
+  // Processed and structured notes ready for report generation
+  notes: Annotation<string[]>({
+    reducer: (x: string[], y: string[]) => x.concat(y),
+    default: () => [],
+  }),
+  // Final formatted research report
+  final_report: Annotation<string>({
+    reducer: (x: string, y: string) => y ?? x,
+  }),
+});
+
+// ===== STRUCTURED OUTPUT SCHEMAS =====
+
+// Schema for user clarification decision and questions.
+export const ClarifyWithUser = z.object({
+  need_clarification: z
+    .boolean()
+    .describe("Whether the user needs to be asked a clarifying question."),
+  question: z
+    .string()
+    .describe("A question to ask the user to clarify the report scope"),
+  verification: z
+    .string()
+    .describe(
+      "Verify message that we will start research after the user has provided the necessary information.",
+    ),
+});
+
+// Schema for structured research brief generation.
+export const ResearchQuestion = z.object({
+  research_brief: z
+    .string()
+    .describe("A research question that will be used to guide the research."),
+});

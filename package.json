@@ -1,0 +1,36 @@
+{
+  "name": "deep-reasearch-ts",
+  "version": "1.0.0",
+  "description": "",
+  "type": "module",
+  "main": "build/utils.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "tsc",
+    "utils": "node --loader ts-node/esm src/utils.ts",
+    "scoping": "node --loader ts-node/esm src/scoping.ts",
+    "watch": "tsc --watch & nodemon build/utils.js",
+    "start": "node build/utils.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/node": "^24.3.0",
+    "nodemon": "^3.1.10",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.2"
+  },
+  "dependencies": {
+    "@langchain/core": "^0.3.0",
+    "@langchain/langgraph": "^0.4.5",
+    "@langchain/tavily": "^0.1.5",
+    "@tavily/core": "^0.5.10",
+    "datetime": "^0.0.3",
+    "dotenv": "^17.2.1",
+    "langchain": "^0.3.30",
+    "prettier": "^3.6.2",
+    "tavily": "^1.0.2",
+    "zod": "^3.25.76"
+  }
+}
