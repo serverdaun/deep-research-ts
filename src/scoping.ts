@@ -9,7 +9,7 @@ import {
   AgentInputState,
 } from "./shared/types";
 import { getToday } from "./utils";
-import { initChatModel } from "langchain/chat_models/universal";
+// import { initChatModel } from "langchain/chat_models/universal";
 import { Command, START, END, StateGraph } from "@langchain/langgraph";
 import { config } from "./config";
 import {
@@ -19,9 +19,7 @@ import {
 } from "@langchain/core/messages";
 
 // Initialize model
-const model = await initChatModel(config.scopingModel, {
-  temperature: config.scopingModelTemperature,
-});
+const model = config.scopingModel;
 
 /* ===== WORKFLOW NODES ===== */
 
@@ -30,6 +28,8 @@ const model = await initChatModel(config.scopingModel, {
  *
  * Uses structured output to make deterministic decisions and avoid hallucination.
  * Routes to either research brief generation or ends with a clarification question.
+ * @param state - The current state of the workflow.
+ * @returns A command to either write a research brief or end the workflow.
  */
 export async function clarifyWithUser(state: {
   messages: any[];
@@ -66,6 +66,8 @@ export async function clarifyWithUser(state: {
  *
  * Uses structured output to ensure the brief follows the required format
  * and contains all necessary details for effective research.
+ * @param state - The current state of the workflow.
+ * @returns A command to either write a research brief or end the workflow.
  */
 export async function writeResearchBrief(state: {
   messages: any[];

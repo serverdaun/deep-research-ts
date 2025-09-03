@@ -1,0 +1,11 @@
+{
+    "dockerfile_lines": [],
+    "graphs": {
+      "research_agent": "./src/research-agent.ts:researcherAgent"
+    },
+    "node_version": "20",
+    "env": ".env",
+    "dependencies": [
+      "."
+    ]
+  }

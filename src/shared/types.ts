@@ -13,13 +13,12 @@ import {
 } from "@langchain/langgraph";
 import { BaseMessage } from "@langchain/core/messages";
 
-// ===== STATE DEFINITIONS =====
+// ===== SCOPING STATE DEFINITIONS =====
 
 // Input state for the full agent - only contains messages from user input.
 export const AgentInputState = MessagesAnnotation;
 
 // Main state for the full multi-agent research system.
-//
 // Extends MessagesState with additional fields for research coordination.
 // Note: Some fields are duplicated across different state classes for proper
 // state management between subgraphs and the main workflow.
@@ -50,7 +49,7 @@ export const AgentState = Annotation.Root({
   }),
 });
 
-// ===== STRUCTURED OUTPUT SCHEMAS =====
+// ===== SCOPING STRUCTURED OUTPUT SCHEMAS =====
 
 // Schema for user clarification decision and questions.
 export const ClarifyWithUser = z.object({
@@ -72,4 +71,61 @@ export const ResearchQuestion = z.object({
   research_brief: z
     .string()
     .describe("A research question that will be used to guide the research."),
+});
+
+// ===== RESEARCHER STATE DEFINITIONS =====
+
+// State for the researh agent containing message history and research metadata.
+// This state tracks the researcher's conversation, iteration count for limiting
+// tool calls, the research topic being investigated, compressed findings,
+// and raw research notes for detailed analysis.
+export const ResearcherState = Annotation.Root({
+  researcher_messages: Annotation<BaseMessage[]>({
+    reducer: addMessages,
+    default: () => [],
+  }),
+  tool_call_iteration: Annotation<number>({
+    reducer: (_x: number, y: number) => y,
+    default: () => 0,
+  }),
+  research_topic: Annotation<string>({
+    reducer: (x: string, y: string) => y ?? x,
+    default: () => "",
+  }),
+  compressed_research: Annotation<string>({
+    reducer: (x: string, y: string) => y ?? x,
+    default: () => "",
+  }),
+  raw_notes: Annotation<string[]>({
+    reducer: (x: string[], y: string[]) => x.concat(y),
+    default: () => [],
+  }),
+});
+
+// Output state for the research agent containing final research results.
+// This repersents the final output of the research process with compressed
+// research findings and all raw notes from the research process.
+export const ResearcherOutputState = Annotation.Root({
+  compressed_research: Annotation<string>({
+    reducer: (x: string, y: string) => y ?? x,
+    default: () => "",
+  }),
+  raw_notes: Annotation<string[]>({
+    reducer: (x: string[], y: string[]) => x.concat(y),
+    default: () => [],
+  }),
+  researcher_messages: Annotation<BaseMessage[]>({
+    reducer: addMessages,
+    default: () => [],
+  }),
+});
+
+// ===== RESEARCHER STRUCTURED OUTPUT SCHEMAS =====
+
+// Schema for webpage content summarization.
+export const Summary = z.object({
+  summary: z.string().describe("Concise summary of the webpage content"),
+  key_excerpts: z
+    .string()
+    .describe("Important quotes and excerpts from the content"),
 });
