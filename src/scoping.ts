@@ -9,17 +9,14 @@ import {
   AgentInputState,
 } from "./shared/types";
 import { getToday } from "./utils";
-// import { initChatModel } from "langchain/chat_models/universal";
 import { Command, START, END, StateGraph } from "@langchain/langgraph";
-import { config } from "./config";
 import {
   HumanMessage,
   AIMessage,
   getBufferString,
 } from "@langchain/core/messages";
-
-// Initialize model
-const model = config.scopingModel;
+import { modelSecrets } from "./config";
+import { AzureChatOpenAI } from "@langchain/openai";
 
 /* ===== WORKFLOW NODES ===== */
 
@@ -33,9 +30,17 @@ const model = config.scopingModel;
  */
 export async function clarifyWithUser(state: {
   messages: any[];
-}): Promise<Command<"write_research_brief" | "__end__">> {
+}): Promise<Command<"write_research_brief" | typeof END>> {
   // Set up structured output model
-  const structuredOutputModel = model.withStructuredOutput(ClarifyWithUser);
+  const llm = new AzureChatOpenAI({
+    model: "gpt-4.1",
+    azureOpenAIApiKey: modelSecrets.gpt41.apiKey,
+    azureOpenAIApiDeploymentName: modelSecrets.gpt41.apiDeploymentName,
+    azureOpenAIApiVersion: modelSecrets.gpt41.apiVersion,
+    azureOpenAIApiInstanceName: modelSecrets.gpt41.apiInstanceName,
+    temperature: 0.0,
+  });
+  const structuredOutputModel = llm.withStructuredOutput(ClarifyWithUser);
 
   // Invoke the model with clarification instructions
   const response = await structuredOutputModel.invoke([
@@ -50,7 +55,7 @@ export async function clarifyWithUser(state: {
   // Route based on clarification need
   if (response.need_clarification) {
     return new Command({
-      goto: "__end__",
+      goto: END,
       update: { messages: [new AIMessage(response.question)] },
     });
   } else {
@@ -73,7 +78,15 @@ export async function writeResearchBrief(state: {
   messages: any[];
 }): Promise<{ research_brief: string; supervisor_messages: any[] }> {
   // Set up structured output model
-  const structuredOutputModel = model.withStructuredOutput(ResearchQuestion);
+  const llm = new AzureChatOpenAI({
+    model: "gpt-4.1",
+    azureOpenAIApiKey: modelSecrets.gpt41.apiKey,
+    azureOpenAIApiDeploymentName: modelSecrets.gpt41.apiDeploymentName,
+    azureOpenAIApiVersion: modelSecrets.gpt41.apiVersion,
+    azureOpenAIApiInstanceName: modelSecrets.gpt41.apiInstanceName,
+    temperature: 0.0,
+  });
+  const structuredOutputModel = llm.withStructuredOutput(ResearchQuestion);
 
   // Generate research brief from conversation history
   const response = await structuredOutputModel.invoke([
@@ -97,7 +110,7 @@ export async function writeResearchBrief(state: {
 // Build the scoping workflow
 const deepResearchBuilder = new StateGraph(AgentState, AgentInputState)
   // Add workflow nodes
-  .addNode("clarify_with_user", clarifyWithUser)
+  .addNode("clarify_with_user", clarifyWithUser, {ends: ["write_research_brief", END]})
   .addNode("write_research_brief", writeResearchBrief)
 
   // Add workflow edges
