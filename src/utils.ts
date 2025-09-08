@@ -5,12 +5,24 @@
  * including web search capabilities and content summarization tools.
  */
 
-import { config, tavilyClient } from "./config";
+import { tavilyClient } from "./config";
 import { createSummarizeWebpagePrompt } from "./shared/prompts";
 import { Summary } from "./shared/types";
-import { HumanMessage } from "@langchain/core/messages";
+import { HumanMessage, filterMessages, BaseMessage } from "@langchain/core/messages";
 import { tool } from "@langchain/core/tools";
 import { z } from "zod/v3";
+import { AzureChatOpenAI } from "@langchain/openai";
+import { modelSecrets } from "./config";
+
+const llm = new AzureChatOpenAI({
+  model: "gpt-4.1-mini",
+  azureOpenAIApiKey: modelSecrets.gpt41Mini.apiKey,
+  azureOpenAIApiDeploymentName: modelSecrets.gpt41Mini.apiDeploymentName,
+  azureOpenAIApiVersion: modelSecrets.gpt41Mini.apiVersion,
+  azureOpenAIApiInstanceName: modelSecrets.gpt41Mini.apiInstanceName,
+});
+
+const structuredModel = llm.withStructuredOutput(Summary);
 
 // ===== UTILITY FUNCTIONS =====
 
@@ -41,21 +53,20 @@ export async function tavilySearchMultiple(
   searchQueries: string[],
   maxResults: number,
   topic: "general" | "news" | "finance" = "general",
-  includeRawContent: boolean = false,
+  includeRawContent: boolean = true,
 ): Promise<Record<string, any>[]> {
-  // Execute searches sequentially.
-  // Note: you can use AsyncTavilyClient to run searches in parallel.
-  let searchDocs = [];
-  for (const query of searchQueries) {
-    const result = await tavilyClient.search(query, {
-      max_results: maxResults,
-      topic: topic,
-      include_raw_content: includeRawContent,
-    });
-    searchDocs.push(result);
-  }
+  // Run searches in parallel using Promise.all
+  const results = await Promise.all(
+    searchQueries.map((query) =>
+      tavilyClient.search(query, {
+        maxResults: maxResults,
+        topic: topic,
+        includeRawContent: includeRawContent ? "text" : false,
+      })
+    )
+  );
 
-  return searchDocs;
+  return results;
 }
 
 /**
@@ -67,10 +78,6 @@ export async function summarizeWebpageContent(
   webpageContent: string,
 ): Promise<string> {
   try {
-    // Set up structured output model for summarization
-    const structuredModel =
-      config.summarizationModel.withStructuredOutput(Summary);
-
     // Generate summary
     const summary = await structuredModel.invoke([
       new HumanMessage(createSummarizeWebpagePrompt(webpageContent)),
@@ -122,11 +129,11 @@ export async function processSearchResults(
   for (const [url, result] of Object.entries(uniqueResults)) {
     // Use existing content if no raw content for summarization
     let content: string;
-    if (!result.raw_content) {
+    if (!result.rawContent) {
       content = result.content;
     } else {
       // Summarize raw content for better processing
-      content = await summarizeWebpageContent(result.raw_content);
+      content = await summarizeWebpageContent(result.rawContent);
     }
 
     summarizedResults[url] = {
@@ -188,7 +195,7 @@ export const tavilySearch = tool(
   async (input: SearchFields): Promise<string> => {
     const { query } = input;
 
-    const maxResults = config.tavilyMaxResults || 3;
+    const maxResults = 3;
     const topic = "general";
 
     // Execute search for a single query
@@ -246,3 +253,58 @@ export const thinkTool = tool(async (input: ThinkFields): Promise<string> => {
 
   return `Reflection recorded: ${reflection}`;
 }, createThinkToolFields());
+
+// ===== SUPERVISOR TOOLS =====
+
+function createConductResearchToolFields() {
+  const conductResearchFieldsSchema = z.object({
+    research_topic: z
+      .string()
+      .describe(
+        "The topic to research. Should be a single topic, and should be described in high detail (at least a paragraph)."
+      )
+  });
+
+  return {
+    name: "ConductResearch",
+    description: "Tool for delegating a research task to a specialized sub-agent.",
+    schema: conductResearchFieldsSchema,
+  };
+}
+
+type ConductResearchFields = z.infer<ReturnType<typeof createConductResearchToolFields>["schema"]>;
+
+export const conductResearch = tool(
+  async (_input: ConductResearchFields) => {
+    // const { research_topic } = input;
+    // return `Research task delegated: ${research_topic}`;
+  },
+  createConductResearchToolFields(),
+);
+
+
+export const ResearchComplete = tool(
+  async () => {},
+  {
+    name: "ResearchComplete",
+    description: "Tool for indicating that the research process is complete",
+  }
+)
+
+/**
+ * Extract research notes from ToolMessage objects in supervisor message history.
+ * 
+ * This function retrieves the compressed reserach findings that sub-agents
+ * return as ToolMessage content. When the supervisoer delegates research to
+ * sub-agents via ConductResearch tool calls, each sub-agent returns its
+ * compressed findings as the content of a ToolMessage. This function
+ * extracts all such ToolMessage content to compile the final research notes.
+ * @param messages - List of messages from supervisor's conversation history
+ * @returns List of research not strings extracted from ToolMessage objects
+ */
+export function getNotesFromToolCalls(
+  messages: BaseMessage[]
+): string[] {
+  const toolMessages = filterMessages(messages, { includeTypes: ["tool"] });
+  return toolMessages.map((m) => String(m.content));
+}

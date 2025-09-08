@@ -1,7 +1,9 @@
 {
     "dockerfile_lines": [],
     "graphs": {
-      "research_agent": "./src/research-agent.ts:researcherAgent"
+      "scope_research": "./src/scoping.ts:scopeResearch",
+      "research_agent": "./src/research-agent.ts:researcherAgent",
+      "supervisor_agent": "./src/multi-agent-supervisor.ts:supervisorAgent"
     },
     "node_version": "20",
     "env": ".env",

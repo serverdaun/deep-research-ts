@@ -5,13 +5,14 @@
  * the research agent scoping workflow, including researcher state management and output schemas.
  */
 
-import { z } from "zod";
+import { z } from "zod/v3";
 import {
   MessagesAnnotation,
   Annotation,
   addMessages,
 } from "@langchain/langgraph";
 import { BaseMessage } from "@langchain/core/messages";
+import { tool } from "@langchain/core/tools";
 
 // ===== SCOPING STATE DEFINITIONS =====
 
@@ -129,3 +130,77 @@ export const Summary = z.object({
     .string()
     .describe("Important quotes and excerpts from the content"),
 });
+
+// ===== LEAD RESEARCHER STATE DEFINITIONS =====
+
+// State for the multi-agent reserach supervisor.
+//
+// Manages coordination between supervisoer and research agents, tracking
+// research progress and accumulating findings from multipe sub-agents.
+export const SupervisorState = Annotation.Root({
+  supervisor_messages: Annotation<BaseMessage[]>({
+    reducer: addMessages,
+    default: () => [],
+  }),
+  research_brief: Annotation<string>({
+    reducer: (x: string, y: string) => y ?? x,
+    default: () => "",
+  }),
+  notes: Annotation<string[]>({
+    reducer: (x: string[], y: string[]) => x.concat(y),
+    default: () => [],
+  }),
+  research_iterations: Annotation<number>({
+    reducer: (_x: number, y: number) => y,
+    default: () => 0,
+  }),
+  raw_notes: Annotation<string[]>({
+    reducer: (x: string[], y: string[]) => x.concat(y),
+    default: () => [],
+  })
+});
+
+// ===== SUPERVISOR TOOLS =====
+
+// Tool for delegating a research task to a specialized sub-agent.
+export const conductResearchTool = tool(
+  async (input: unknown) => {
+    // This tool will be used by the supervisor to delegate research tasks
+    // The actual implementation will be handled by the supervisor agent
+    const { research_topic } = input as { research_topic: string };
+    return `Research task delegated: ${research_topic}`;
+  },
+  {
+    name: "conduct_research",
+    description: "Tool for delegating a research task to a specialized sub-agent.",
+    schema: {
+      type: "object" as const,
+      properties: {
+        research_topic: {
+          type: "string" as const,
+          description: "The topic to research. Should be a single topic, and should be described in high detail (at least a paragraph).",
+        },
+      },
+      required: ["research_topic"],
+    },
+  }
+);
+
+// Tool for indicating that the research process is complete.
+export const researchCompleteTool = tool(
+  async (_input: unknown = {}) => {
+    // This tool signals that the research process is finished
+    return "Research process completed.";
+  },
+  {
+    name: "research_complete",
+    description: "Tool for indicating that the research process is complete.",
+    schema: {
+      type: "object" as const,
+      properties: {},
+    },
+  }
+);
+
+// Export tools array for easy use in agents
+export const supervisorTools = [conductResearchTool, researchCompleteTool];
