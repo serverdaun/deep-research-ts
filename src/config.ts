@@ -10,6 +10,9 @@ export const tavilyClient = tavily({
   apiKey: process.env.TAVILY_API_KEY || "",
 });
 
+export const maxConcurrentResearchUnits = process.env.MAX_CONCURRENT_RESEARCH_UNITS || "3";
+export const maxResearcherIterations = process.env.MAX_RESEARCHER_ITERATIONS || "6";
+
 export const modelSecrets = {
   gpt41: {
     apiKey: process.env.AZURE_OPENAI_API_KEY!,
