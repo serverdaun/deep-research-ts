@@ -12,7 +12,7 @@ import {
   ToolMessage,
   filterMessages,
 } from "@langchain/core/messages";
-import { modelSecrets } from "./config";
+import { createChatModel } from "./llm/factory";
 import { ResearcherState, ResearcherOutputState } from "./shared/types";
 import { tavilySearch, thinkTool } from "./utils";
 import {
@@ -20,28 +20,14 @@ import {
   createCompressResearchSystemPrompt,
   createResearchAgentPrompt,
 } from "./shared/prompts";
-import { AzureChatOpenAI } from "@langchain/openai";
 
 // Set up tools and model binding
 const tools = [tavilySearch, thinkTool];
 const toolsByName = new Map(tools.map((tool) => [tool.name, tool]));
 
-const modelWithTools = new AzureChatOpenAI({
-  model: "gpt-4.1",
-  azureOpenAIApiKey: modelSecrets.gpt41.apiKey,
-  azureOpenAIApiDeploymentName: modelSecrets.gpt41.apiDeploymentName,
-  azureOpenAIApiVersion: modelSecrets.gpt41.apiVersion,
-  azureOpenAIApiInstanceName: modelSecrets.gpt41.apiInstanceName,
-}).bindTools(tools);
+const modelWithTools = createChatModel({ family: "gpt41", model: "gpt-4.1" }).bindTools(tools);
 
-const compressModel = new AzureChatOpenAI({
-  model: "gpt-4.1",
-  azureOpenAIApiKey: modelSecrets.gpt41.apiKey,
-  azureOpenAIApiDeploymentName: modelSecrets.gpt41.apiDeploymentName,
-  azureOpenAIApiVersion: modelSecrets.gpt41.apiVersion,
-  azureOpenAIApiInstanceName: modelSecrets.gpt41.apiInstanceName,
-  maxTokens: 32000,
-});
+const compressModel = createChatModel({ family: "gpt41", model: "gpt-4.1", maxTokens: 32000 });
 
 // ===== AGENT NODES =====
 

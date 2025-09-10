@@ -10,8 +10,7 @@
  * The system orchestrates the complete research workflow from initial user
  * input through final report delivery.
  */
-import { modelSecrets } from "./config";
-import { AzureChatOpenAI } from "@langchain/openai";
+import { createChatModel } from "./llm/factory";
 import { AgentState, AgentInputState } from "./shared/types";
 import { createFinalReportGenerationPrompt } from "./shared/prompts";
 import { END, START, StateGraph } from "@langchain/langgraph";
@@ -20,13 +19,7 @@ import { getToday } from "./utils";
 import { clarifyWithUser, writeResearchBrief } from "./research-scoping";
 import { supervisorAgent } from "./multi-agent-supervisor";
 
-const llm = new AzureChatOpenAI({
-  model: "gpt-4.1",
-  azureOpenAIApiKey: modelSecrets.gpt41.apiKey,
-  azureOpenAIApiDeploymentName: modelSecrets.gpt41.apiDeploymentName,
-  azureOpenAIApiVersion: modelSecrets.gpt41.apiVersion,
-  azureOpenAIApiInstanceName: modelSecrets.gpt41.apiInstanceName,
-});
+const llm = createChatModel({ family: "gpt41", model: "gpt-4.1" });
 
 /**
  * Final report generation node.

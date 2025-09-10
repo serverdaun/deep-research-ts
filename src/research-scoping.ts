@@ -26,27 +26,12 @@ import {
   AIMessage,
   getBufferString,
 } from "@langchain/core/messages";
-import { modelSecrets } from "./config";
-import { AzureChatOpenAI } from "@langchain/openai";
+import { createChatModel } from "./llm/factory";
 
-const clarifyLLM = new AzureChatOpenAI({
-  model: "gpt-4.1",
-  azureOpenAIApiKey: modelSecrets.gpt41.apiKey,
-  azureOpenAIApiDeploymentName: modelSecrets.gpt41.apiDeploymentName,
-  azureOpenAIApiVersion: modelSecrets.gpt41.apiVersion,
-  azureOpenAIApiInstanceName: modelSecrets.gpt41.apiInstanceName,
-  temperature: 0.0,
-});
+const clarifyLLM = createChatModel({ family: "gpt41", model: "gpt-4.1", temperature: 0.0 });
 const structuredClarifyLLM = clarifyLLM.withStructuredOutput(ClarifyWithUser);
 
-const researchBriefLLM = new AzureChatOpenAI({
-  model: "gpt-4.1",
-  azureOpenAIApiKey: modelSecrets.gpt41.apiKey,
-  azureOpenAIApiDeploymentName: modelSecrets.gpt41.apiDeploymentName,
-  azureOpenAIApiVersion: modelSecrets.gpt41.apiVersion,
-  azureOpenAIApiInstanceName: modelSecrets.gpt41.apiInstanceName,
-  temperature: 0.0,
-});
+const researchBriefLLM = createChatModel({ family: "gpt41", model: "gpt-4.1", temperature: 0.0 });
 const structuredResearchBriefLLM =
   researchBriefLLM.withStructuredOutput(ResearchQuestion);
 

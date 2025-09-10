@@ -26,18 +26,15 @@ import {
 } from "@langchain/core/messages";
 import { createLeadResearcherPrompt } from "./shared/prompts";
 import { getToday } from "./utils";
-import { modelSecrets } from "./config";
-import { AzureChatOpenAI } from "@langchain/openai";
+import { createChatModel } from "./llm/factory";
+import { maxConcurrentResearchUnits, maxResearcherIterations } from "./config";
 
 // Set up tools and model binding
 const supervisorToolsArray = [conductResearch, ResearchComplete, thinkTool];
 // Ensure models are initialized before binding tools
-const supervisorModelWithTools = new AzureChatOpenAI({
+const supervisorModelWithTools = createChatModel({
+  family: "gpt41",
   model: "gpt-4.1",
-  azureOpenAIApiKey: modelSecrets.gpt41.apiKey,
-  azureOpenAIApiDeploymentName: modelSecrets.gpt41.apiDeploymentName,
-  azureOpenAIApiVersion: modelSecrets.gpt41.apiVersion,
-  azureOpenAIApiInstanceName: modelSecrets.gpt41.apiInstanceName,
 }).bindTools(supervisorToolsArray);
 
 // ===== SUPERVISOR NODES =====
@@ -60,7 +57,11 @@ async function supervisor(
 
   // Prepare system message with current date and constraints
   const systemMessage = new SystemMessage(
-    createLeadResearcherPrompt(getToday(), "3", "6"),
+    createLeadResearcherPrompt(
+      getToday(),
+      maxConcurrentResearchUnits,
+      maxResearcherIterations,
+    ),
   );
   const messages = [systemMessage, ...supervisorMessages];
 
