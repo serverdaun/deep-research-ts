@@ -10,7 +10,7 @@
     "moduleResolution": "node",
     "target": "esnext",
     "types": ["node"],
-  
+
     // Other Outputs
     "sourceMap": true,
     "declaration": true,
@@ -25,14 +25,14 @@
     "noImplicitOverride": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-  
+
     // Recommended Options
     "strict": true,
     "jsx": "react-jsx",
     "isolatedModules": true,
     "noUncheckedSideEffectImports": true,
     "moduleDetection": "force",
-    "skipLibCheck": true,
+    "skipLibCheck": true
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "build"],

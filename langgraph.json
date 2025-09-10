@@ -1,13 +1,12 @@
 {
-    "dockerfile_lines": [],
-    "graphs": {
-      "scope_research": "./src/scoping.ts:scopeResearch",
-      "research_agent": "./src/research-agent.ts:researcherAgent",
-      "supervisor_agent": "./src/multi-agent-supervisor.ts:supervisorAgent"
-    },
-    "node_version": "20",
-    "env": ".env",
-    "dependencies": [
-      "."
-    ]
-  }
+  "dockerfile_lines": [],
+  "graphs": {
+    "scope_research": "./src/research-scoping.ts:scopeResearch",
+    "research_agent": "./src/research-agent.ts:researcherAgent",
+    "supervisor_agent": "./src/multi-agent-supervisor.ts:supervisorAgent",
+    "deep_research": "./src/full-research.ts:deepResearch"
+  },
+  "node_version": "20",
+  "env": ".env",
+  "dependencies": ["."]
+}
