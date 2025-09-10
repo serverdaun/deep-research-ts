@@ -12,7 +12,7 @@ import {
   ToolMessage,
   filterMessages,
 } from "@langchain/core/messages";
-import { modelSecrets} from "./config";
+import { modelSecrets } from "./config";
 import { ResearcherState, ResearcherOutputState } from "./shared/types";
 import { tavilySearch, thinkTool } from "./utils";
 import {
@@ -22,10 +22,26 @@ import {
 } from "./shared/prompts";
 import { AzureChatOpenAI } from "@langchain/openai";
 
-
 // Set up tools and model binding
 const tools = [tavilySearch, thinkTool];
 const toolsByName = new Map(tools.map((tool) => [tool.name, tool]));
+
+const modelWithTools = new AzureChatOpenAI({
+  model: "gpt-4.1",
+  azureOpenAIApiKey: modelSecrets.gpt41.apiKey,
+  azureOpenAIApiDeploymentName: modelSecrets.gpt41.apiDeploymentName,
+  azureOpenAIApiVersion: modelSecrets.gpt41.apiVersion,
+  azureOpenAIApiInstanceName: modelSecrets.gpt41.apiInstanceName,
+}).bindTools(tools);
+
+const compressModel = new AzureChatOpenAI({
+  model: "gpt-4.1",
+  azureOpenAIApiKey: modelSecrets.gpt41.apiKey,
+  azureOpenAIApiDeploymentName: modelSecrets.gpt41.apiDeploymentName,
+  azureOpenAIApiVersion: modelSecrets.gpt41.apiVersion,
+  azureOpenAIApiInstanceName: modelSecrets.gpt41.apiInstanceName,
+  maxTokens: 32000,
+});
 
 // ===== AGENT NODES =====
 
@@ -41,14 +57,6 @@ const toolsByName = new Map(tools.map((tool) => [tool.name, tool]));
 async function llmCall(state: { researcher_messages: any[] }): Promise<{
   researcher_messages: any[];
 }> {
-  const modelWithTools = new AzureChatOpenAI({
-    model: "gpt-4.1",
-    azureOpenAIApiKey: modelSecrets.gpt41.apiKey,
-    azureOpenAIApiDeploymentName: modelSecrets.gpt41.apiDeploymentName,
-    azureOpenAIApiVersion: modelSecrets.gpt41.apiVersion,
-    azureOpenAIApiInstanceName: modelSecrets.gpt41.apiInstanceName,
-  }).bindTools(tools);
-
   return {
     researcher_messages: [
       await modelWithTools.invoke([
@@ -116,14 +124,6 @@ async function compressResearch(state: typeof ResearcherState.State): Promise<{
     ...state.researcher_messages,
     new HumanMessage(createCompressResearchHumanMessage(state.research_topic)),
   ];
-  const compressModel = new AzureChatOpenAI({
-    model: "gpt-4.1",
-    azureOpenAIApiKey: modelSecrets.gpt41.apiKey,
-    azureOpenAIApiDeploymentName: modelSecrets.gpt41.apiDeploymentName,
-    azureOpenAIApiVersion: modelSecrets.gpt41.apiVersion,
-    azureOpenAIApiInstanceName: modelSecrets.gpt41.apiInstanceName,
-    maxTokens: 32000,
-  });
   const response = await compressModel.invoke(messages);
 
   // Extract raw notes from tool and AI messages

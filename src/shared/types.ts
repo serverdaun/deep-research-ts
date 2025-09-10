@@ -157,7 +157,7 @@ export const SupervisorState = Annotation.Root({
   raw_notes: Annotation<string[]>({
     reducer: (x: string[], y: string[]) => x.concat(y),
     default: () => [],
-  })
+  }),
 });
 
 // ===== SUPERVISOR TOOLS =====
@@ -172,18 +172,20 @@ export const conductResearchTool = tool(
   },
   {
     name: "conduct_research",
-    description: "Tool for delegating a research task to a specialized sub-agent.",
+    description:
+      "Tool for delegating a research task to a specialized sub-agent.",
     schema: {
       type: "object" as const,
       properties: {
         research_topic: {
           type: "string" as const,
-          description: "The topic to research. Should be a single topic, and should be described in high detail (at least a paragraph).",
+          description:
+            "The topic to research. Should be a single topic, and should be described in high detail (at least a paragraph).",
         },
       },
       required: ["research_topic"],
     },
-  }
+  },
 );
 
 // Tool for indicating that the research process is complete.
@@ -199,7 +201,7 @@ export const researchCompleteTool = tool(
       type: "object" as const,
       properties: {},
     },
-  }
+  },
 );
 
 // Export tools array for easy use in agents

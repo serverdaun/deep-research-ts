@@ -7,7 +7,7 @@ dotenvConfig();
 
 // Initialize the Tavily client
 export const tavilyClient = tavily({
-  apiKey: process.env.TAVILY_API_KEY || ""
+  apiKey: process.env.TAVILY_API_KEY || "",
 });
 
 export const modelSecrets = {
@@ -23,4 +23,4 @@ export const modelSecrets = {
     apiVersion: process.env.AZURE_OPENAI_API_VERSION_4_1_MINI!,
     apiInstanceName: process.env.AZURE_OPENAI_API_INSTANCE_NAME!,
   },
-}
+};

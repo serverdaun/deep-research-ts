@@ -8,7 +8,11 @@
 import { tavilyClient } from "./config";
 import { createSummarizeWebpagePrompt } from "./shared/prompts";
 import { Summary } from "./shared/types";
-import { HumanMessage, filterMessages, BaseMessage } from "@langchain/core/messages";
+import {
+  HumanMessage,
+  filterMessages,
+  BaseMessage,
+} from "@langchain/core/messages";
 import { tool } from "@langchain/core/tools";
 import { z } from "zod/v3";
 import { AzureChatOpenAI } from "@langchain/openai";
@@ -62,8 +66,8 @@ export async function tavilySearchMultiple(
         maxResults: maxResults,
         topic: topic,
         includeRawContent: includeRawContent ? "text" : false,
-      })
-    )
+      }),
+    ),
   );
 
   return results;
@@ -261,39 +265,35 @@ function createConductResearchToolFields() {
     research_topic: z
       .string()
       .describe(
-        "The topic to research. Should be a single topic, and should be described in high detail (at least a paragraph)."
-      )
+        "The topic to research. Should be a single topic, and should be described in high detail (at least a paragraph).",
+      ),
   });
 
   return {
     name: "ConductResearch",
-    description: "Tool for delegating a research task to a specialized sub-agent.",
+    description:
+      "Tool for delegating a research task to a specialized sub-agent.",
     schema: conductResearchFieldsSchema,
   };
 }
 
-type ConductResearchFields = z.infer<ReturnType<typeof createConductResearchToolFields>["schema"]>;
+type ConductResearchFields = z.infer<
+  ReturnType<typeof createConductResearchToolFields>["schema"]
+>;
 
-export const conductResearch = tool(
-  async (_input: ConductResearchFields) => {
-    // const { research_topic } = input;
-    // return `Research task delegated: ${research_topic}`;
-  },
-  createConductResearchToolFields(),
-);
+export const conductResearch = tool(async (_input: ConductResearchFields) => {
+  // const { research_topic } = input;
+  // return `Research task delegated: ${research_topic}`;
+}, createConductResearchToolFields());
 
-
-export const ResearchComplete = tool(
-  async () => {},
-  {
-    name: "ResearchComplete",
-    description: "Tool for indicating that the research process is complete",
-  }
-)
+export const ResearchComplete = tool(async () => {}, {
+  name: "ResearchComplete",
+  description: "Tool for indicating that the research process is complete",
+});
 
 /**
  * Extract research notes from ToolMessage objects in supervisor message history.
- * 
+ *
  * This function retrieves the compressed reserach findings that sub-agents
  * return as ToolMessage content. When the supervisoer delegates research to
  * sub-agents via ConductResearch tool calls, each sub-agent returns its
@@ -302,9 +302,7 @@ export const ResearchComplete = tool(
  * @param messages - List of messages from supervisor's conversation history
  * @returns List of research not strings extracted from ToolMessage objects
  */
-export function getNotesFromToolCalls(
-  messages: BaseMessage[]
-): string[] {
+export function getNotesFromToolCalls(messages: BaseMessage[]): string[] {
   const toolMessages = filterMessages(messages, { includeTypes: ["tool"] });
   return toolMessages.map((m) => String(m.content));
 }
